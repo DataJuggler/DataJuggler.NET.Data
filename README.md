@@ -2,6 +2,9 @@
 
 # Major Rename - DataJuggler.NET.Data
 
+12.28.2025: I added a new interface IGridValueProvider. This is used by DataJuggler.Blazor.Components.Grid
+and DataTier.NET. Working to make it easy to display data in a grid.
+
 11.21.2025: This project was updated to .NET 10. I renamed this project to DataJuggler.NET.Data so
 a new version doesn't have to be created every year. I had a design flaw in 2019 and went with it for 6 years.
 
