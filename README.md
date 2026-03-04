@@ -2,6 +2,8 @@
 
 # Major Rename - DataJuggler.NET.Data
 
+3.4.2026: Four Nuget packages were updated.
+
 1.21.2026: I added .NET10 to TargetFrameworkEnum. Excelerate is getting updated is why.
 
 12.28.2025: I added a new interface IGridValueProvider. This is used by DataJuggler.Blazor.Components.Grid

@@ -492,6 +492,7 @@ namespace DataJuggler.NET.Data
             public enum DataTypeEnum : int
             {
                 NotSupported = 0,
+				BigInt =  10006,
 				Object = 1,
                 Autonumber = 3,
                 Currency = 6,
