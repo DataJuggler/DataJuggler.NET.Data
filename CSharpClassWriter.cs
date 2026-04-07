@@ -2702,45 +2702,64 @@ namespace DataJuggler.NET.Data
 					string linetext = null;
 
 					// If Text Is Not Skipped
-					if(!SkipText)
+					if (!SkipText)
 					{
 						// Set linetext to LineText incase SkipIndent 
 						linetext = LineText;
 
 						// If SkipIndent Is False Do Not Indent String
-						if(!SkipIndent)
+						if (!SkipIndent)
 						{
 							// string to hold linetext + identity
 							linetext = IndentString(LineText);
 						}
 
-                        // if TextWriterMode is true and the TextWriter exists
-                        if ((TextWriterMode) && (HasTextWriter))
-                        {   
-                            // Append this line
-                            TextWriter.Append(linetext);
-                        }
-                        else if (HasWriter)
-                        {
-						    // Write The Current Line
-						    Writer.Write(linetext);
-                        }
+						// if TextWriterMode is true and the TextWriter exists
+						if ((TextWriterMode) && (HasTextWriter))
+						{
+							// get the spacesCount
+							int spacesCount = TextHelper.GetSpacesCount(linetext);
+
+							// if the spacesCount was found
+							if (spacesCount > 0)
+							{
+								// if the string has the wrong indent
+								if ((spacesCount / 4) != indent)
+								{
+									// Update 4.6.2026 - Handling Indent for TextWriter mode
+									linetext = IndentString(linetext.Trim());
+								}
+							}
+							else
+							{
+								// Update 4.6.2026 - Handling Indent for TextWriter mode
+								linetext = IndentString(linetext);
+							}
+
+							// Append this line
+							TextWriter.Append(linetext);
+						}
+						else if (HasWriter)
+						{
+							// Write The Current Line
+							Writer.Write(linetext);
+						}
 					}
 
-                    // if the value for NewLine is true
-					if(NewLine)
+					// if the value for NewLine is true
+					if (NewLine)
 					{
-                        // if TextWriterMode is true and the TextWriter exists
-                        if ((TextWriterMode) && (HasTextWriter))
-                        {   
-                            // Append a new line
-                            TextWriter.Append(Environment.NewLine);
-                        }
-                        else if (HasWriter)
-                        {
-						    // Write a new line
-						    Writer.Write(Writer.NewLine);
-                        }
+						// if TextWriterMode is true and the TextWriter exists
+						if ((TextWriterMode) && (HasTextWriter))
+						{
+							// Append a new line
+							TextWriter.Append(Environment.NewLine);
+						}
+						else if (HasWriter)
+						{
+							// Write a new line
+							Writer.Write(Writer.NewLine);
+						}
 					}
 				}
 				#endregion
