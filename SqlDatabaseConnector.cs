@@ -1948,7 +1948,9 @@ namespace DataJuggler.NET.Data
 
             #region LoadDataIndexes(DataTable dataTable)
             /// <summary>
-            /// This method loads the Indexes for the Table given
+            /// This method loads the Indexes for the Table given. A multi-column index is
+            /// loaded as ONE DataIndex with multiple entries in its Columns list, not as
+            /// separate objects per column.
             /// </summary>
             /// <param name="dataTable"></param>
             /// <returns></returns>
@@ -1957,16 +1959,26 @@ namespace DataJuggler.NET.Data
                 // initial value
                 List<DataIndex> indexes = new List<DataIndex>();
 
-                // local
+                // locals
                 DataIndex index = null;
+                DataIndex prevIndex = null;
+                int indexId = 0;
 
                 try
                 {
                     // if the dataTable exists
                     if (dataTable != null)
                     {
-                        // create the sql to get all the indexes for this table
-                        string sql = "Select * From sys.indexes where object_id = (select object_id from sys.objects where name = '[TableName]')".Replace("[TableName]", dataTable.Name);
+                        // create the sql to get all the indexes and their columns for this table,
+                        // ordered by index_id then key_ordinal, so every column belonging to the
+                        // same index arrives together, and in the correct order
+                        string sql = ("Select idx.object_id, idx.name, idx.index_id, idx.type, idx.type_desc, idx.is_unique, idx.data_space_id, idx.ignore_dup_key, idx.is_primary_key, idx.is_unique_constraint, idx.is_padded, idx.is_disabled, idx.is_hypothetical, idx.allow_row_locks, idx.allow_page_locks, idx.has_filter, idx.filter_definition, idx.fill_factor, " +
+                                     "col.name AS FieldName, ic.is_descending_key, ic.is_included_column, ic.key_ordinal " +
+                                     "From sys.indexes idx " +
+                                     "Inner Join sys.index_columns ic On ic.object_id = idx.object_id And ic.index_id = idx.index_id " +
+                                     "Inner Join sys.columns col On col.object_id = ic.object_id And col.column_id = ic.column_id " +
+                                     "Where idx.object_id = (select object_id from sys.objects where name = '[TableName]') " +
+                                     "Order By idx.index_id, ic.key_ordinal").Replace("[TableName]", dataTable.Name);
 
                         // Open The command Object
                         SqlCommand command = new SqlCommand(sql, DatabaseConnection);
@@ -1980,48 +1992,66 @@ namespace DataJuggler.NET.Data
                         // Fill DataAdapter
                         adapter.Fill(DS, "tables");
 
-                        // Load the CheckConstraints
+                        // Load the Indexes
                         foreach (System.Data.DataRow dataRow in DS.Tables["tables"].Rows)
                         {
-                            // Create a new DataIndex object
-                            index = new DataIndex();
+                            // the index_id this row belongs to
+                            indexId = (int) dataRow["index_id"];
 
-                            // map the properites in the dataRow to the new DataIndex object
-                            index.ObjectId = (int)dataRow["object_id"];
-                            index.Name = (string)dataRow["Name"];
-                            index.IndexId = (int)dataRow["index_id"];
-                            index.IndexType = ParseIndexType(dataRow["type"]);
-                            index.TypeDescription = (string)dataRow["type_desc"];
-                            index.IsUnique = (bool)dataRow["is_unique"];
-                            index.DataSpaceId = (int)dataRow["data_space_id"];
-                            index.IgnoreDuplicateKey = (bool)dataRow["ignore_dup_key"];
-                            index.IsPrimary = (bool)dataRow["is_primary_key"];
-                            index.IsUniqueConstraint = (bool)dataRow["is_unique_constraint"];
-                            index.IsPadded = (bool)dataRow["is_padded"];
-                            index.IsDisabled = (bool)dataRow["is_disabled"];
-                            index.IsHypothetical = (bool)dataRow["is_hypothetical"];
-                            index.AllowRowLocks = (bool)dataRow["allow_row_locks"];
-                            index.AllowPageLocks = (bool)dataRow["allow_page_locks"];
-                            index.HasFilter = (bool)dataRow["has_filter"];
-                            index.FilterDefinition = dataRow["filter_definition"].ToString();
-
-                            // FillFactor null causes an error
-                            if (dataRow["fill_factor"] != null)
+                            // if this row belongs to the same index as the row before it, add to it instead of creating a new one
+                            if ((NullHelper.Exists(prevIndex)) && (prevIndex.IndexId == indexId))
                             {
-                                // Set the FillFactor
-                                string temp = dataRow["fill_factor"].ToString();
-
-                                // parse out the string
-                                index.FillFactor = Int32.Parse(temp);
+                                // reuse the index already in progress
+                                index = prevIndex;
                             }
                             else
                             {
-                                // Set the FillFactor
-                                index.FillFactor = 0;
+                                // Create a new DataIndex object
+                                index = new DataIndex();
+
+                                // map the properites in the dataRow to the new DataIndex object
+                                index.ObjectId = (int) dataRow["object_id"];
+                                index.Name = (string) dataRow["Name"];
+                                index.IndexId = indexId;
+                                index.IndexType = ParseIndexType(dataRow["type"]);
+                                index.TypeDescription = (string) dataRow["type_desc"];
+                                index.IsUnique = (bool) dataRow["is_unique"];
+                                index.DataSpaceId = (int) dataRow["data_space_id"];
+                                index.IgnoreDuplicateKey = (bool) dataRow["ignore_dup_key"];
+                                index.IsPrimary = (bool) dataRow["is_primary_key"];
+                                index.IsUniqueConstraint = (bool) dataRow["is_unique_constraint"];
+                                index.IsPadded = (bool) dataRow["is_padded"];
+                                index.IsDisabled = (bool) dataRow["is_disabled"];
+                                index.IsHypothetical = (bool) dataRow["is_hypothetical"];
+                                index.AllowRowLocks = (bool) dataRow["allow_row_locks"];
+                                index.AllowPageLocks = (bool) dataRow["allow_page_locks"];
+                                index.HasFilter = (bool) dataRow["has_filter"];
+                                index.FilterDefinition = dataRow["filter_definition"].ToString();
+
+                                // FillFactor null causes an error
+                                if (dataRow["fill_factor"] != null)
+                                {
+                                    // Set the FillFactor
+                                    string temp = dataRow["fill_factor"].ToString();
+
+                                    // parse out the string
+                                    index.FillFactor = Int32.Parse(temp);
+                                }
+                                else
+                                {
+                                    // Set the FillFactor
+                                    index.FillFactor = 0;
+                                }
+
+                                // add the new DataIndex to the indexes collection
+                                indexes.Add(index);
                             }
 
-                            // add the new DataIndex to the indexes collection
-                            indexes.Add(index);
+                            // add this column to the index
+                            index.AddColumn((string) dataRow["FieldName"], (bool) dataRow["is_descending_key"], (bool) dataRow["is_included_column"], (int) dataRow["key_ordinal"]);
+
+                            // remember this as the index currently in progress, for the next row
+                            prevIndex = index;
                         }
                     }
                 }
@@ -2475,16 +2505,6 @@ namespace DataJuggler.NET.Data
                             }
                         }
                         
-                        // This is a quick and dirty way to exclude a table, it is on my to do list to handle this
-                        // a better way, but I haven't had the time to implement this feature yet.
-
-                        // If you have any tables you want to exclude, this is the place to do so
-                        //if (dataTable.Name == "TableNameToExclude")
-                        //{
-                        //    // do not add this table
-                        //    addTable = false;
-                        //}
-                       	
 						// If the table should be added (Test Again)
 						if (addTable)
 						{
@@ -2634,7 +2654,9 @@ namespace DataJuggler.NET.Data
 
             #region LoadAllForeignKeys()
             /// <summary>
-            /// This method is used to load all foreign key constraints for the database open by the DataConnector
+            /// This method is used to load all foreign key constraints for the database open by the DataConnector.
+            /// A composite (multi-column) foreign key is loaded as ONE ForeignKeyConstraint with multiple
+            /// entries in its Columns list, not as separate objects that happen to share the same Name.
             /// </summary>
             /// <returns></returns>
             public List<ForeignKeyConstraint> LoadAllForeignKeys()
@@ -2648,14 +2670,15 @@ namespace DataJuggler.NET.Data
                 string columnName = "";
                 string referencedTableName = "";
                 string referencedColumnName = "";
+                int ordinal = 0;
                 ForeignKeyConstraint foreignKeyConstraint = null;
-
-                // create a temporary list of all foreign keys to hold just the table name and the foreign key name
-                allForeignKeys = new List<ForeignKeyConstraint>();
+                ForeignKeyConstraint prevForeignKeyConstraint = null;
 
                 // to save looking up the foreign keys for tables that do not have any
-                // first this query will return all the foreign keys for all tables in the database
-                string sql = "SELECT  obj.name AS FK_NAME, sch.name AS [schema_name], tab1.name AS [Table], col1.name AS [Column], tab2.name AS [Referenced_Table], col2.name AS [Referenced_Column] FROM sys.foreign_key_columns fkc INNER JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id INNER JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id INNER JOIN sys.schemas sch ON tab1.schema_id = sch.schema_id INNER JOIN sys.columns col1 ON col1.column_id = parent_column_id AND col1.object_id = tab1.object_id INNER JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id INNER JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id Order By tab1.Name, col1.Name";
+                // first this query will return all the foreign keys for all tables in the database.
+                // Ordered by constraint name, then constraint_column_id, so every column belonging
+                // to the same constraint arrives together and in the correct order.
+                string sql = "SELECT obj.name AS FK_NAME, sch.name AS [schema_name], tab1.name AS [Table], col1.name AS [Column], tab2.name AS [Referenced_Table], col2.name AS [Referenced_Column], fkc.constraint_column_id AS [Ordinal] FROM sys.foreign_key_columns fkc INNER JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id INNER JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id INNER JOIN sys.schemas sch ON tab1.schema_id = sch.schema_id INNER JOIN sys.columns col1 ON col1.column_id = parent_column_id AND col1.object_id = tab1.object_id INNER JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id INNER JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id Order By obj.name, fkc.constraint_column_id";
 
                 // Create a SqlCommand
                 SqlCommand command = new SqlCommand(sql, DatabaseConnection);
@@ -2667,12 +2690,12 @@ namespace DataJuggler.NET.Data
                 DataSet ds = new DataSet();
 
                 // Fill the Adapter
-                adapter.Fill(ds,"ForeignKeys");
+                adapter.Fill(ds, "ForeignKeys");
 
                 // Load the identityColumns
                 System.Data.DataTable foreignKeysTable = DataHelper.ReturnFirstTable(ds);
-                    
-                    // iterate the rows
+
+                // iterate the rows
                 foreach (System.Data.DataRow row in foreignKeysTable.Rows)
                 {
                     // set the value for constraintName
@@ -2681,7 +2704,7 @@ namespace DataJuggler.NET.Data
                     // set the value for TableName
                     tableName = (string) row["Table"];
 
-                    // Set the value for tableName
+                    // Set the value for columnName
                     columnName = (string) row["Column"];
 
                     // set the value for referencedTableName
@@ -2690,17 +2713,31 @@ namespace DataJuggler.NET.Data
                     // set the value for referencedColumnName
                     referencedColumnName = (string) row["Referenced_Column"];
 
+                    // set the value for ordinal
+                    ordinal = (int) row["Ordinal"];
+
                     if (TextHelper.Exists(constraintName, tableName, columnName, referencedTableName, referencedColumnName))
                     {
-                        // Attempt to create a ForeignKeyConstraint
-                        foreignKeyConstraint = new ForeignKeyConstraint(constraintName, tableName, columnName, referencedTableName, referencedColumnName);
-                    }
+                        // if this row belongs to the same constraint as the row before it, add to it instead of creating a new one
+                        if ((NullHelper.Exists(prevForeignKeyConstraint)) && (TextHelper.IsEqual(constraintName, prevForeignKeyConstraint.Name)))
+                        {
+                            // reuse the constraint already in progress
+                            foreignKeyConstraint = prevForeignKeyConstraint;
+                        }
+                        else
+                        {
+                            // Attempt to create a ForeignKeyConstraint
+                            foreignKeyConstraint = new ForeignKeyConstraint(constraintName, tableName, referencedTableName);
 
-                    // If the foreignKeyConstraint object exists
-                    if (NullHelper.Exists(foreignKeyConstraint))
-                    {
-                        // add this foreignKeyConstraint to the collection of all foreign key constraints
-                        allForeignKeys.Add(foreignKeyConstraint);
+                            // add this foreignKeyConstraint to the collection of all foreign key constraints
+                            allForeignKeys.Add(foreignKeyConstraint);
+                        }
+
+                        // add this column pair to the constraint (fills FieldName / ReferencedColumn too, when this is column 1)
+                        foreignKeyConstraint.AddColumn(columnName, referencedColumnName, ordinal);
+
+                        // remember this as the constraint currently in progress, for the next row
+                        prevForeignKeyConstraint = foreignKeyConstraint;
                     }
                 }
 

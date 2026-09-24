@@ -1,5 +1,10 @@
 # News
 
+9.24.2026: I realized my foreign key constraint and index schema reading was wrong.
+I wasn't taken into account composite keys consisting of more than 1 field. This realse
+now reads all the columns for Indexes and Constraints, and I will be updating DB Compare
+soon with this new release.
+
 # Major Rename - DataJuggler.NET.Data
 
 3.4.2026: Four Nuget packages were updated.

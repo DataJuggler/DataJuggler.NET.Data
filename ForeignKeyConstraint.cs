@@ -2,6 +2,7 @@
 
 #region using statements
 
+using DataJuggler.UltimateHelper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,8 @@ namespace DataJuggler.NET.Data
     {
         
         #region Private Variables
-        private string foreignKey;
+        private List<ForeignKeyColumnPair> columns;
+        private string fieldName;
         private string name;
         private string referencedTable;
         private string referencedColumn;
@@ -36,41 +38,89 @@ namespace DataJuggler.NET.Data
             /// </summary>
             public ForeignKeyConstraint()
             {
+                // Create a new collection of 'ForeignKeyColumnPair' objects.
+                Columns = new List<ForeignKeyColumnPair>();
             }
             #endregion
 
-            #region Parameterized Constructor(string name, string table, string foreignKey, string referencedTable, string referencedColumn)
+            #region Parameterized Constructor(string name, string table, string referencedTable)
             /// <summary>
-            /// Create a new instance of a ForeignKeyConstraint and set the properties
+            /// Create a new instance of a ForeignKeyConstraint and set the properties.
+            /// Call AddColumn afterward for each column pair (once for a normal FK, 
+            /// once per column for a composite FK).
             /// </summary>
             /// <param name="name"></param>
             /// <param name="table"></param>
-            /// <param name="foreignKey"></param>
             /// <param name="referencedTable"></param>
-            /// <param name="referencedField"></param>
-            public ForeignKeyConstraint(string name, string table, string foreignKey, string referencedTable, string referencedColumn)
+            public ForeignKeyConstraint(string name, string table, string referencedTable)
             {
+                // create the collection
+                this.columns = new List<ForeignKeyColumnPair>();
+
                 // Store the arguments
                 Name = name;
                 Table = table;
-                ForeignKey = foreignKey;
                 ReferencedTable = referencedTable;
-                ReferencedColumn = referencedColumn;
             }
             #endregion
-        
+
+        #endregion
+
+        #region Methods
+
+            #region AddColumn(string fieldName, string referencedColumn, int ordinal)
+            /// <summary>
+            /// This method adds one column pair to this constraint. Called once for
+            /// a normal FK, once per column for a composite FK. The first call (ordinal 1)
+            /// also fills the legacy FieldName / ReferencedColumn fields.
+            /// </summary>
+            /// <param name="fieldName"></param>
+            /// <param name="referencedColumn"></param>
+            /// <param name="ordinal"></param>
+            public void AddColumn(string fieldName, string referencedColumn, int ordinal)
+            {
+                // if the Columns collection does not exist yet
+                if (NullHelper.IsNull(Columns))
+                {
+                    // create the collection
+                    Columns = new List<ForeignKeyColumnPair>();
+                }
+
+                // add this column pair
+                Columns.Add(new ForeignKeyColumnPair(fieldName, referencedColumn, ordinal));
+
+                // if this is the first column, keep the legacy fields in sync for old readers
+                if (ordinal == 1)
+                {
+                    FieldName = fieldName;
+                    ReferencedColumn = referencedColumn;
+                }
+            }
+            #endregion
+
         #endregion
 
         #region Properties
             
-            #region ForeignKey
+            #region Columns
             /// <summary>
-            /// This property gets or sets the value for 'ForeignKey'.
+            /// This property gets or sets the value for 'Columns'.
             /// </summary>
-            public string ForeignKey
+            public List<ForeignKeyColumnPair> Columns
             {
-                get { return foreignKey; }
-                set { foreignKey = value; }
+                get { return columns; }
+                set { columns = value; }
+            }
+            #endregion
+            
+            #region FieldName
+            /// <summary>
+            /// This property gets or sets the value for 'FieldName'.
+            /// </summary>
+            public string FieldName
+            {
+                get { return fieldName; }
+                set { fieldName = value; }
             }
             #endregion
             
