@@ -20,7 +20,7 @@ namespace DataJuggler.NET.Data
     {
 
         #region Private Variables
-        private string foreignKeyColumn;
+        private string fieldName;
         private int ordinal;
         private string referencedColumn;
         #endregion
@@ -36,17 +36,17 @@ namespace DataJuggler.NET.Data
             }
             #endregion
 
-            #region Parameterized Constructor(string foreignKeyColumn, string referencedColumn, int ordinal)
+            #region Parameterized Constructor(string fieldName, string referencedColumn, int ordinal)
             /// <summary>
             /// Create a new instance of a ForeignKeyColumnPair and set the properties
             /// </summary>
-            /// <param name="foreignKeyColumn"></param>
+            /// <param name="fieldName"></param>
             /// <param name="referencedColumn"></param>
             /// <param name="ordinal"></param>
-            public ForeignKeyColumnPair(string foreignKeyColumn, string referencedColumn, int ordinal)
+            public ForeignKeyColumnPair(string fieldName, string referencedColumn, int ordinal)
             {
                 // Store the arguments
-                ForeignKeyColumn = foreignKeyColumn;
+                FieldName = fieldName;
                 ReferencedColumn = referencedColumn;
                 Ordinal = ordinal;
             }
@@ -56,14 +56,14 @@ namespace DataJuggler.NET.Data
 
         #region Properties
 
-            #region ForeignKeyColumn
+            #region FieldName
             /// <summary>
-            /// This property gets or sets the value for 'ForeignKeyColumn'.
+            /// This property gets or sets the value for 'FieldName'.
             /// </summary>
-            public string ForeignKeyColumn
+            public string FieldName
             {
-                get { return foreignKeyColumn; }
-                set { foreignKeyColumn = value; }
+                get { return fieldName; }
+                set { fieldName = value; }
             }
             #endregion
             
