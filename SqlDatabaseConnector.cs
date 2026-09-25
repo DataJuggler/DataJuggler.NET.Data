@@ -1708,15 +1708,15 @@ namespace DataJuggler.NET.Data
 
             #region LoadDataFieldsSchema(ref List<DataTable> tables)
             /// <summary>
-			/// Load the Fields for a dataTable passed in.
-			/// </summary>
-			/// <param name="dataTable">The table to create the fields for.</param>
-			/// <returns></returns>
-			private void LoadDataFieldsSchema(ref List<DataTable> tables)
-			{
+            /// Load the Fields for a dataTable passed in.
+            /// </summary>
+            /// <param name="dataTable">The table to create the fields for.</param>
+            /// <returns></returns>
+            private void LoadDataFieldsSchema(ref List<DataTable> tables)
+            {
                 // local;
                 DataTable table = null;
-                
+    
                 try
                 {
                     // If the tables collection exists and has one or more items
@@ -1731,14 +1731,14 @@ namespace DataJuggler.NET.Data
                         // This is used to hold SchemaInformation about the current table and current field
                         List<DataField> schemaFields = null;
                         DataField schemaField = null;
-                        
+            
                         // sql Statement To Select All tables
                         string sql = "SELECT TABLE_SCHEMA, Table_Name, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, Is_Nullable, Data_Type, CHARACTER_MAXIMUM_LENGTH, Numeric_Precision, Numeric_Scale FROM INFORMATION_SCHEMA.COLUMNS";
-                            
+                
                         // Open The command Object
                         SqlCommand command = new SqlCommand(sql, DatabaseConnection);
 
-                          // Create a Data adapter
+                        // Create a Data adapter
                         SqlDataAdapter adapter = new SqlDataAdapter(command);
 
                         // Create And Open Data
@@ -1746,7 +1746,7 @@ namespace DataJuggler.NET.Data
 
                         // Fill DataAdapter
                         adapter.Fill(DS, "fields");
-                        
+            
                         // Get the sourceTable to iterate
                         System.Data.DataTable sourceTable = DataHelper.ReturnFirstTable(DS);
 
@@ -1761,7 +1761,7 @@ namespace DataJuggler.NET.Data
                             {  
                                 // set to null first just in case a table is not found
                                 table = null;
-                                
+                    
                                 // Attempt to find the table
                                 table = tables.FirstOrDefault(x => x.Name == tableName);
 
@@ -1775,18 +1775,18 @@ namespace DataJuggler.NET.Data
                                 {
                                     // look up the IdentityInfo object for this table
                                     tableIdentityInfo = identityColumns.FirstOrDefault(x => x.TableName == table.Name);
-                                    
+                        
                                     // Attempt to get the SchemaFields
                                     schemaFields = GetSchemaFields(table);
                                 }
                             }
-                            
+                
                             // If the table object exists
                             if (NullHelper.Exists(table))
                             {
                                 // Set SchemaField to null for the new field
                                 schemaField = null;
-                                
+                    
                                 // Create New DataField
                                 DataJuggler.NET.Data.DataField field = new DataField();
 
@@ -1807,10 +1807,10 @@ namespace DataJuggler.NET.Data
 
                                 // Set fieldOrdinal
                                 field.FieldOrdinal = (int) databaseField["Ordinal_Position"];
-                                
+                    
                                 // Set dataType
                                 string dataType = databaseField["data_type"].ToString();
-                                
+                    
                                 // Set the DBDatatype
                                 field.DBDataType = dataType;
 
@@ -1824,68 +1824,37 @@ namespace DataJuggler.NET.Data
                                     field.DefaultValue = defaultValue;
                                 }
 
-                                // if this is a decimal
-                                if ((dataType.Contains("Decimal")) || (dataType.Contains("Numeric")) || (dataType.Contains("Money")))
+                                // If the tableIdentityInfo object exists
+                                if (NullHelper.Exists(tableIdentityInfo))
                                 {
-                                    // Attempt to get the Precision & Scale
-                                    try
+                                    // see if this is auto increment
+                                    field.IsAutoIncrement = TextHelper.IsEqual(field.DBFieldName, tableIdentityInfo.ColumnName);
+                                }
+
+                                // INFORMATION_SCHEMA returns the data type in lowercase, so compare case-insensitively
+                                if ((TextHelper.IsEqual(dataType, "money")) || (TextHelper.IsEqual(dataType, "smallmoney")))
+                                {
+                                    // money has a fixed precision and scale, so none are stored
+                                    field.DataType = DataManager.DataTypeEnum.Currency;
+                                }
+                                else if ((TextHelper.IsEqual(dataType, "decimal")) || (TextHelper.IsEqual(dataType, "numeric")))
+                                {
+                                    // set the dataType
+                                    field.DataType = DataManager.DataTypeEnum.Decimal;
+
+                                    // Numeric_Precision is a tinyint and Numeric_Scale is an int, so convert rather than cast; both are the real values
+                                    if (databaseField["Numeric_Precision"] != DBNull.Value)
                                     {
-                                        // attemp to get the money string
-                                        string sqlDataType = databaseField[23].ToString();
-
-                                        // if the money string exists
-                                        if (sqlDataType == "System.Data.SqlTypes.SqlMoney")
-                                        {
-                                            // set the datatype
-                                            field.DataType = DataManager.DataTypeEnum.Currency;
-                                        }
-                                        else if (sqlDataType == "System.Data.SqlTypes.SqlDecimal")
-                                        {
-                                            // set the dataType
-                                            field.DataType = DataManager.DataTypeEnum.Decimal;
-
-                                            // set precision and scale
-                                            string precision = databaseField["Numeric_Precision"].ToString();
-                                            string scale = databaseField["Numeric_Scale"].ToString();
-
-                                            // if the precision and scale exist
-                                            if (TextHelper.Exists(precision, scale))
-                                            {
-                                                // set the precision and scale
-                                                field.Precision = NumericHelper.ParseInteger(precision, 0, -1);
-                                                field.Scale = NumericHelper.ParseInteger(scale, 0, -1);
-
-                                                // if the Precision was found
-                                                if (field.Precision > 0)
-                                                {   
-                                                    // for some reason these numbers have to be divided by two
-                                                    field.Precision = field.Precision / 2;
-                                                }
-                                                
-                                                // if the Scale was found
-                                                if (field.Scale > 0)
-                                                {
-                                                    // for some reason these numbers have to be divided by two
-                                                    field.Scale = field.Scale / 2;
-                                                }
-                                            }
-                                        }
+                                        field.Precision = Convert.ToInt32(databaseField["Numeric_Precision"]);
                                     }
-                                    catch (Exception error2)
+
+                                    if (databaseField["Numeric_Scale"] != DBNull.Value)
                                     {
-                                        // for debugging only
-                                        string err2 = error2.ToString();
+                                        field.Scale = Convert.ToInt32(databaseField["Numeric_Scale"]);
                                     }
                                 }
                                 else
                                 {
-                                    // If the tableIdentityInfo object exists
-                                    if (NullHelper.Exists(tableIdentityInfo))
-                                    {
-                                        // see if this is auto increment
-                                        field.IsAutoIncrement = TextHelper.IsEqual(field.DBFieldName, tableIdentityInfo.ColumnName);
-                                    }
-
                                     // Parse dataType
                                     field.DataType = ParseDataType(dataType, field.IsAutoIncrement);
                                 }
@@ -1895,7 +1864,7 @@ namespace DataJuggler.NET.Data
                                 {
                                     // Set ColumnSize
                                     field.Size = schemaField.Size;
-                                
+                    
                                     // set the value from the schemaField
                                     field.IsNullable = schemaField.IsNullable;
 
@@ -1928,7 +1897,7 @@ namespace DataJuggler.NET.Data
 
                                 // Find the InsertIndex so the fields are inserted in alphabetical order
                                 int insertIndex = FindInsertIndex(table.Fields, field);
-                                
+                    
                                 // Add to Fields Collection
                                 table.Fields.Insert(insertIndex, field);
                             }
@@ -1943,8 +1912,8 @@ namespace DataJuggler.NET.Data
                     // Write the error to the debugger
                     DebugHelper.WriteDebugError("LoadDataFieldsSchema", "DataJuggler.Net.SQLDatabaseConnector", error);
                 }
-			}
-			#endregion
+            }
+            #endregion
 
             #region LoadDataIndexes(DataTable dataTable)
             /// <summary>
@@ -2048,7 +2017,8 @@ namespace DataJuggler.NET.Data
                             }
 
                             // add this column to the index
-                            index.AddColumn((string) dataRow["FieldName"], (bool) dataRow["is_descending_key"], (bool) dataRow["is_included_column"], (int) dataRow["key_ordinal"]);
+                            // key_ordinal is tinyint (byte), so Convert instead of casting
+                            index.AddColumn((string) dataRow["FieldName"], (bool) dataRow["is_descending_key"], (bool) dataRow["is_included_column"], Convert.ToInt32(dataRow["key_ordinal"]));
 
                             // remember this as the index currently in progress, for the next row
                             prevIndex = index;
@@ -2674,11 +2644,17 @@ namespace DataJuggler.NET.Data
                 ForeignKeyConstraint foreignKeyConstraint = null;
                 ForeignKeyConstraint prevForeignKeyConstraint = null;
 
-                // to save looking up the foreign keys for tables that do not have any
-                // first this query will return all the foreign keys for all tables in the database.
-                // Ordered by constraint name, then constraint_column_id, so every column belonging
-                // to the same constraint arrives together and in the correct order.
-                string sql = "SELECT obj.name AS FK_NAME, sch.name AS [schema_name], tab1.name AS [Table], col1.name AS [Column], tab2.name AS [Referenced_Table], col2.name AS [Referenced_Column], fkc.constraint_column_id AS [Ordinal] FROM sys.foreign_key_columns fkc INNER JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id INNER JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id INNER JOIN sys.schemas sch ON tab1.schema_id = sch.schema_id INNER JOIN sys.columns col1 ON col1.column_id = parent_column_id AND col1.object_id = tab1.object_id INNER JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id INNER JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id Order By obj.name, fkc.constraint_column_id";
+                string sql = "SELECT obj.name AS FK_NAME, sch.name AS [schema_name], tab1.name AS [Table], col1.name AS [Column], tab2.name AS [Referenced_Table], col2.name AS [Referenced_Column], fkc.constraint_column_id AS [Ordinal], " +
+                        "fk.delete_referential_action_desc AS [OnDelete], fk.update_referential_action_desc AS [OnUpdate], fk.is_disabled AS [IsDisabled] " +
+                        "FROM sys.foreign_key_columns fkc " +
+                        "INNER JOIN sys.foreign_keys fk ON fk.object_id = fkc.constraint_object_id " +
+                        "INNER JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id " +
+                        "INNER JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id " +
+                        "INNER JOIN sys.schemas sch ON tab1.schema_id = sch.schema_id " +
+                        "INNER JOIN sys.columns col1 ON col1.column_id = fkc.parent_column_id AND col1.object_id = tab1.object_id " +
+                        "INNER JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id " +
+                        "INNER JOIN sys.columns col2 ON col2.column_id = fkc.referenced_column_id AND col2.object_id = tab2.object_id " +
+                        "Order By obj.name, fkc.constraint_column_id";
 
                 // Create a SqlCommand
                 SqlCommand command = new SqlCommand(sql, DatabaseConnection);
@@ -2728,6 +2704,11 @@ namespace DataJuggler.NET.Data
                         {
                             // Attempt to create a ForeignKeyConstraint
                             foreignKeyConstraint = new ForeignKeyConstraint(constraintName, tableName, referencedTableName);
+
+                            // cascade rules and enabled state (constraint-level, so only set once)
+                            foreignKeyConstraint.OnDelete = row["OnDelete"].ToString();
+                            foreignKeyConstraint.OnUpdate = row["OnUpdate"].ToString();
+                            foreignKeyConstraint.IsDisabled = (bool) row["IsDisabled"];
 
                             // add this foreignKeyConstraint to the collection of all foreign key constraints
                             allForeignKeys.Add(foreignKeyConstraint);

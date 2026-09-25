@@ -7,6 +7,10 @@ soon with this new release.
 
 # Major Rename - DataJuggler.NET.Data
 
+9.25.2026: Major update to LoadDatabaseSchema methods. Indexes and Foreign Key Constraints now
+properly handle composite fields (more than one field). Default Value Constraints not capture the
+definition and are not limited to numbers. DB Compare updates are coming today.
+
 3.4.2026: Four Nuget packages were updated.
 
 1.21.2026: I added .NET10 to TargetFrameworkEnum. Excelerate is getting updated is why.

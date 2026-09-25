@@ -25,6 +25,7 @@ namespace DataJuggler.NET.Data
         private string tableName;
         private string columnName;
         private double defaultValue;
+        private string definition;
         #endregion
 
         #region Properties
@@ -59,6 +60,17 @@ namespace DataJuggler.NET.Data
             {
                 get { return defaultValue; }
                 set { defaultValue = value; }
+            }
+            #endregion
+            
+            #region Definition
+            /// <summary>
+            /// This property gets or sets the value for 'Definition'.
+            /// </summary>
+            public string Definition
+            {
+                get { return definition; }
+                set { definition = value; }
             }
             #endregion
             

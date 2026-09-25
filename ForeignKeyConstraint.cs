@@ -28,6 +28,9 @@ namespace DataJuggler.NET.Data
         private string referencedTable;
         private string referencedColumn;
         private string table;
+        private string onDelete;
+        private string onUpdate;
+        private bool isDisabled;
         #endregion
 
         #region Constructors
@@ -124,6 +127,17 @@ namespace DataJuggler.NET.Data
             }
             #endregion
             
+            #region IsDisabled
+            /// <summary>
+            /// This property gets or sets the value for 'IsDisabled'.
+            /// </summary>
+            public bool IsDisabled
+            {
+                get { return isDisabled; }
+                set { isDisabled = value; }
+            }
+            #endregion
+            
             #region Name
             /// <summary>
             /// This property gets or sets the value for 'Name'.
@@ -132,6 +146,28 @@ namespace DataJuggler.NET.Data
             {
                 get { return name; }
                 set { name = value; }
+            }
+            #endregion
+            
+            #region OnDelete
+            /// <summary>
+            /// This property gets or sets the value for 'OnDelete'.
+            /// </summary>
+            public string OnDelete
+            {
+                get { return onDelete; }
+                set { onDelete = value; }
+            }
+            #endregion
+            
+            #region OnUpdate
+            /// <summary>
+            /// This property gets or sets the value for 'OnUpdate'.
+            /// </summary>
+            public string OnUpdate
+            {
+                get { return onUpdate; }
+                set { onUpdate = value; }
             }
             #endregion
             
