@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using DataJuggler.UltimateHelper;
 
 #endregion
 
@@ -333,6 +335,72 @@ namespace DataJuggler.NET.Data
             }
             #endregion
 			
+            #region GetCheckConstraintsForColumn(string columnName)
+            /// <summary>
+            /// returns the check constraints on this table for the column given. A check that uses
+            /// more than one column loads once per column, so it is found from any of its columns.
+            /// </summary>
+            public List<CheckConstraint> GetCheckConstraintsForColumn(string columnName)
+            {
+                // initial value
+                List<CheckConstraint> columnCheckConstraints = new List<CheckConstraint>();
+
+                // if the columnName exists and this table has one or more check constraints
+                if ((TextHelper.Exists(columnName)) && (ListHelper.HasOneOrMoreItems(this.CheckConstraints)))
+                {
+                    // get the check constraints for this column
+                    columnCheckConstraints = this.CheckConstraints.Where(x => String.Equals(x.ColumnName, columnName, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                // return value
+                return columnCheckConstraints;
+            }
+            #endregion
+
+            #region GetDefaultValueConstraintsForColumn(string columnName)
+            /// <summary>
+            /// returns the default value constraints on this table for the column given.
+            /// A column can only have one default, so this returns zero or one item.
+            /// </summary>
+            public List<DefaultValueConstraint> GetDefaultValueConstraintsForColumn(string columnName)
+            {
+                // initial value
+                List<DefaultValueConstraint> columnDefaultValueConstraints = new List<DefaultValueConstraint>();
+
+                // if the columnName exists and this table has one or more default value constraints
+                if ((TextHelper.Exists(columnName)) && (ListHelper.HasOneOrMoreItems(this.DefaultValueConstraints)))
+                {
+                    // get the default value constraints for this column
+                    columnDefaultValueConstraints = this.DefaultValueConstraints.Where(x => String.Equals(x.ColumnName, columnName, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                // return value
+                return columnDefaultValueConstraints;
+            }
+            #endregion
+
+            #region GetIndexesForColumn(string columnName)
+            /// <summary>
+            /// returns the indexes, primary key and unique constraints on this table that use the
+            /// column given, as a key column or an included column.
+            /// </summary>
+            public List<DataIndex> GetIndexesForColumn(string columnName)
+            {
+                // initial value
+                List<DataIndex> columnIndexes = new List<DataIndex>();
+
+                // if the columnName exists and this table has one or more indexes
+                if ((TextHelper.Exists(columnName)) && (ListHelper.HasOneOrMoreItems(this.Indexes)))
+                {
+                    // get the indexes that use this column
+                    columnIndexes = this.Indexes.Where(x => (ListHelper.HasOneOrMoreItems(x.Columns)) && (x.Columns.Any(c => String.Equals(c.FieldName, columnName, StringComparison.OrdinalIgnoreCase)))).ToList();
+                }
+
+                // return value
+                return columnIndexes;
+            }
+            #endregion
+
 			#region HasMultiplePrimaryKeys()
 			/// <summary>
 			/// This is used because I started to support composite primary keys
@@ -759,16 +827,13 @@ namespace DataJuggler.NET.Data
 						    if(dataField.PrimaryKey)
 						    {
 							    // set the primaryKey field
-							    primaryKey = field;
+							    primaryKey = dataField;
 							    
 							    // break out of for loop
 							    break;
 						    }
 					    }
 	                }
-					
-					// Fixed Bug: PrimaryKey was not working 10/31/2007
-					//            Switched to camelCase and made an bluner.
 					
 					// Return value
 					return primaryKey;

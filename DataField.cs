@@ -75,7 +75,8 @@ namespace DataJuggler.NET.Data
 				#region Clone()
 				public DataField Clone()
 				{
-					return Clone(false,false);
+                    // do not copy field values
+					return Clone(false, false);
 				}
 				#endregion
 
@@ -84,7 +85,7 @@ namespace DataJuggler.NET.Data
 				/// Clones The field Without The fieldValue
 				/// If IngoreFieldValue 
 				/// </summary>
-				/// <param name="IngoreFieldValue"></param>
+				/// <param name="includeFieldValue"></param>
 				/// <returns></returns>
 				public DataField Clone(bool includeFieldValue)
 				{
@@ -93,53 +94,64 @@ namespace DataJuggler.NET.Data
 				}
 				#endregion
 
-                #region Clone(bool IncludeFieldValue, bool loading)
+                #region Clone(bool includeFieldValue, bool loading)
                 /// <summary>
-				/// Clones The field Without The fieldValue
-				/// I forget why loading is here, it might have been
-                /// a client app that needed it to prevent 
-                /// changes being set.
-				/// </summary>
-				/// <param name="IngoreFieldValue"></param>
-				/// <returns></returns>
-				public DataField Clone(bool includeFieldValue, bool loading)
-				{
-					// Create field To Return
-					DataField Field = new DataField();
+                /// Clones this field. The FieldValue is only copied when includeFieldValue is true.
+                /// If loading is true, the clone's Loading flag is set while the value is copied,
+                /// so Changes is not set on the clone.
+                /// </summary>
+                /// <param name="includeFieldValue"></param>
+                /// <param name="loading"></param>
+                /// <returns></returns>
+                public DataField Clone(bool includeFieldValue, bool loading)
+                {
+                    // Create the field to return
+                    DataField clone = new DataField();
 
-					// Clone Each Property
-					Field.AccessMode = this.AccessMode;
-					Field.DataType = this.DataType;
-					Field.Exclude = this.Exclude;
-					Field.FieldName = this.FieldName;
-					Field.Index = this.Index;
-					Field.IsNullable = this.IsNullable;
-					Field.PrimaryKey = this.PrimaryKey;
-					Field.Required = this.Required;
-					Field.Scope = this.Scope;
-					Field.Size = this.Size;
+                    // Clone Each Property
+                    clone.AccessMode = this.AccessMode;
+                    clone.DataType = this.DataType;
+                    clone.Exclude = this.Exclude;
+                    clone.FieldName = this.FieldName;
+                    clone.Index = this.Index;
+                    clone.IsNullable = this.IsNullable;
+                    clone.PrimaryKey = this.PrimaryKey;
+                    clone.Required = this.Required;
+                    clone.Scope = this.Scope;
+                    clone.Size = this.Size;
 
-					// Do Not Clone field Value If includeFieldValue = false
-					if(!includeFieldValue)
-					{
-						// Check If Loading Property Is True
-						if(loading)
-						{
-							Field.Loading = true;
-						}
-						
-						// Set field Value
-						Field.FieldValue = this.FieldValue;
+                    // Schema properties that were not being copied
+                    // (DBFieldName must be set after FieldName, since the FieldName setter overwrites it)
+                    clone.DBFieldName = this.DBFieldName;
+                    clone.DBDataType = this.DBDataType;
+                    clone.Precision = this.Precision;
+                    clone.Scale = this.Scale;
+                    clone.DefaultValue = this.DefaultValue;
+                    clone.HasDefault = this.HasDefault;
+                    clone.IsAutoIncrement = this.IsAutoIncrement;
+                    clone.IsReadOnly = this.IsReadOnly;
 
-						// Reset Loading Property
-						this.Loading = false;
-					}
+                    // Only copy the field value if includeFieldValue is true (this check was inverted)
+                    if (includeFieldValue)
+                    {
+                        // if loading
+                        if (loading)
+                        {
+                            // prevent Changes from being set on the clone
+                            clone.Loading = true;
+                        }
 
-					// Return This field
-					return Field;
-						
-				}
-				#endregion
+                        // Set field Value
+                        clone.FieldValue = this.FieldValue;
+
+                        // Reset the clone's Loading property (this was resetting the original's)
+                        clone.Loading = false;
+                    }
+
+                    // return value
+                    return clone;
+                }
+                #endregion
 
 			#endregion
 

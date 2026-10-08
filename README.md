@@ -7,6 +7,22 @@ soon with this new release.
 
 # Major Rename - DataJuggler.NET.Data
 
+10.8.2026: 
+
+New in this version:
+
+Database.GetForeignKeysForColumn(DataTable table, string columnName) 
+returns the foreign keys that use a column, both the table's own foreign keys on that column and foreign keys in other tables that reference it.
+DataTable.GetIndexesForColumn(string columnName), GetCheckConstraintsForColumn(string columnName) and GetDefaultValueConstraintsForColumn(string columnName) return the indexes, check constraints and default value constraints that use a column.
+
+Fixed DataTable.PrimaryKey always returning null in the .NET 10 version. 
+
+Fixed DataField.Clone. The includeFieldValue check was inverted, 
+Loading was reset on the original field instead of the clone, and 
+DBFieldName, DBDataType, Precision, Scale, DefaultValue, HasDefault, 
+IsAutoIncrement and IsReadOnly are now copied. 
+
+
 9.25.2026: Major update to LoadDatabaseSchema methods. Indexes and Foreign Key Constraints now
 properly handle composite fields (more than one field). Default Value Constraints not capture the
 definition and are not limited to numbers. DB Compare updates are coming today.
