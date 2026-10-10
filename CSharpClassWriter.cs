@@ -327,6 +327,14 @@ namespace DataJuggler.NET.Data
 
                                 // required
                                 break;
+
+                            case DataManager.DataTypeEnum.BigInt:
+
+                                // set dataType to long
+                                dataType = "long";
+
+                                // required
+                                break;
 				        
 					        case DataManager.DataTypeEnum.Integer:
 					        case DataManager.DataTypeEnum.Autonumber:
@@ -337,16 +345,23 @@ namespace DataJuggler.NET.Data
 						        // required
 						        break;
         						
-					        case DataManager.DataTypeEnum.Percentage: 
-					        case DataManager.DataTypeEnum.Double:
-					        case DataManager.DataTypeEnum.Currency:
-					        case DataManager.DataTypeEnum.Decimal:
+		                    case DataManager.DataTypeEnum.Percentage: 
+		                    case DataManager.DataTypeEnum.Double:
 					        
-					            // set dataType to double
-						        dataType =  "double";
+		                        // set dataType to double
+			                    dataType =  "double";
 						        
-						        // required
-						        break;
+			                    // required
+			                    break;
+
+                            case DataManager.DataTypeEnum.Currency:
+                            case DataManager.DataTypeEnum.Decimal:
+
+                                // set dataType to decimal (exact, matches the database)
+                                dataType = "decimal";
+
+                                // required
+                                break;
 						        
 					        case DataManager.DataTypeEnum.DateTime:
 					        

@@ -57,6 +57,47 @@ namespace DataJuggler.NET.Data
 
 		#region Methods
 
+            #region BuildAddDefaultSQL(string tableName, DefaultValueConstraint constraint)
+            /// <summary>
+            /// Builds the ADD CONSTRAINT ... DEFAULT ... FOR sql for the constraint given. Uses the Definition text
+            /// when available; falls back to the numeric DefaultValue for older schemas without a Definition.
+            /// Skipped if the column already has a default (whatever its name).
+            /// </summary>
+            private string BuildAddDefaultSQL(string tableName, DefaultValueConstraint constraint)
+            {
+                // initial value
+                string sql = "";
+
+                // local
+                string definition = "";
+
+                // if the constraint exists and has a column
+                if ((NullHelper.Exists(constraint)) && (TextHelper.Exists(constraint.ColumnName)))
+                {
+                    // prefer the raw definition, e.g. ((1)), (getdate()), ('Pending')
+                    if (TextHelper.Exists(constraint.Definition))
+                    {
+                        definition = constraint.Definition;
+                    }
+                    else
+                    {
+                        // older schema: numeric value only
+                        definition = "(" + constraint.DefaultValue + ")";
+                    }
+
+                    // guard: only if the column has no default yet (checked by column, so a different name still counts)
+                    sql = "IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc INNER JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id" +
+                          " WHERE dc.parent_object_id = OBJECT_ID(N'" + EscapeLiteral("[" + tableName + "]") + "') AND c.name = N'" + EscapeLiteral(constraint.ColumnName) + "')" + Environment.NewLine;
+
+                    // build the sql
+                    sql += "ALTER TABLE [" + tableName + "] ADD CONSTRAINT [" + constraint.ConstraintName + "] DEFAULT " + definition + " FOR [" + constraint.ColumnName + "]" + Environment.NewLine + "Go" + Environment.NewLine;
+                }
+
+                // return value
+                return sql;
+            }
+            #endregion
+
             #region BuildConnectionString(string serverName, string databaseName)
             /// <summary>
             /// This method builds a connection string when Windows Authentication is used.
@@ -219,6 +260,27 @@ namespace DataJuggler.NET.Data
 			}
 			#endregion
             
+            #region EscapeLiteral(string value)
+            /// <summary>
+            /// returns the value with single quotes doubled, for use inside N'...'
+            /// </summary>
+            private static string EscapeLiteral(string value)
+            {
+                // initial value
+                string escapedValue = "";
+
+                // If the value string exists
+                if (TextHelper.Exists(value))
+                {
+                    // double any single quotes
+                    escapedValue = value.Replace("'", "''");
+                }
+
+                // return value
+                return escapedValue;
+            }
+            #endregion
+
 			#region ExecuteNonQuery(string sql)
 			public bool ExecuteNonQuery(string sql)
 			{
@@ -1716,7 +1778,7 @@ namespace DataJuggler.NET.Data
             {
                 // local;
                 DataTable table = null;
-    
+
                 try
                 {
                     // If the tables collection exists and has one or more items
@@ -1731,10 +1793,10 @@ namespace DataJuggler.NET.Data
                         // This is used to hold SchemaInformation about the current table and current field
                         List<DataField> schemaFields = null;
                         DataField schemaField = null;
-            
+
                         // sql Statement To Select All tables
-                        string sql = "SELECT TABLE_SCHEMA, Table_Name, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, Is_Nullable, Data_Type, CHARACTER_MAXIMUM_LENGTH, Numeric_Precision, Numeric_Scale FROM INFORMATION_SCHEMA.COLUMNS";
-                
+                        string sql = "SELECT TABLE_SCHEMA, Table_Name, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, Is_Nullable, Data_Type, CHARACTER_MAXIMUM_LENGTH, Numeric_Precision, Numeric_Scale, DATETIME_PRECISION FROM INFORMATION_SCHEMA.COLUMNS";
+
                         // Open The command Object
                         SqlCommand command = new SqlCommand(sql, DatabaseConnection);
 
@@ -1746,7 +1808,7 @@ namespace DataJuggler.NET.Data
 
                         // Fill DataAdapter
                         adapter.Fill(DS, "fields");
-            
+
                         // Get the sourceTable to iterate
                         System.Data.DataTable sourceTable = DataHelper.ReturnFirstTable(DS);
 
@@ -1761,7 +1823,7 @@ namespace DataJuggler.NET.Data
                             {  
                                 // set to null first just in case a table is not found
                                 table = null;
-                    
+
                                 // Attempt to find the table
                                 table = tables.FirstOrDefault(x => x.Name == tableName);
 
@@ -1775,18 +1837,18 @@ namespace DataJuggler.NET.Data
                                 {
                                     // look up the IdentityInfo object for this table
                                     tableIdentityInfo = identityColumns.FirstOrDefault(x => x.TableName == table.Name);
-                        
+
                                     // Attempt to get the SchemaFields
                                     schemaFields = GetSchemaFields(table);
                                 }
                             }
-                
+
                             // If the table object exists
                             if (NullHelper.Exists(table))
                             {
                                 // Set SchemaField to null for the new field
                                 schemaField = null;
-                    
+
                                 // Create New DataField
                                 DataJuggler.NET.Data.DataField field = new DataField();
 
@@ -1807,10 +1869,10 @@ namespace DataJuggler.NET.Data
 
                                 // Set fieldOrdinal
                                 field.FieldOrdinal = (int) databaseField["Ordinal_Position"];
-                    
+
                                 // Set dataType
                                 string dataType = databaseField["data_type"].ToString();
-                    
+
                                 // Set the DBDatatype
                                 field.DBDataType = dataType;
 
@@ -1842,16 +1904,17 @@ namespace DataJuggler.NET.Data
                                     // set the dataType
                                     field.DataType = DataManager.DataTypeEnum.Decimal;
 
-                                    // Numeric_Precision is a tinyint and Numeric_Scale is an int, so convert rather than cast; both are the real values
-                                    if (databaseField["Numeric_Precision"] != DBNull.Value)
-                                    {
-                                        field.Precision = Convert.ToInt32(databaseField["Numeric_Precision"]);
-                                    }
+                                    // set the precision and scale (a missing value defaults to 0)
+                                    field.Precision = NumericHelper.ParseInteger(databaseField["Numeric_Precision"].ToString(), 0, 0);
+                                    field.Scale = NumericHelper.ParseInteger(databaseField["Numeric_Scale"].ToString(), 0, 0);
+                                }
+                                else if (TextHelper.IsEqual(dataType, "datetime2"))
+                                {
+                                    // set the dataType
+                                    field.DataType = DataManager.DataTypeEnum.DateTime;
 
-                                    if (databaseField["Numeric_Scale"] != DBNull.Value)
-                                    {
-                                        field.Scale = Convert.ToInt32(databaseField["Numeric_Scale"]);
-                                    }
+                                    // store the number of fractional second digits (the 0 in datetime2(0))
+                                    field.Precision = NumericHelper.ParseInteger(databaseField["DATETIME_PRECISION"].ToString(), 0, 0);
                                 }
                                 else
                                 {
@@ -1864,7 +1927,7 @@ namespace DataJuggler.NET.Data
                                 {
                                     // Set ColumnSize
                                     field.Size = schemaField.Size;
-                    
+
                                     // set the value from the schemaField
                                     field.IsNullable = schemaField.IsNullable;
 
@@ -1897,7 +1960,7 @@ namespace DataJuggler.NET.Data
 
                                 // Find the InsertIndex so the fields are inserted in alphabetical order
                                 int insertIndex = FindInsertIndex(table.Fields, field);
-                    
+
                                 // Add to Fields Collection
                                 table.Fields.Insert(insertIndex, field);
                             }
@@ -3513,96 +3576,120 @@ namespace DataJuggler.NET.Data
 			
 			#region ParseDataType(string dataType, bool isAutoIncrement)
             /// <summary>
-            /// Parse Data Type
+            /// Parses the Data Type
             /// </summary>
             /// <param name="dataType"></param>
             /// <param name="isAutoIncrement"></param>
             /// <returns></returns>
             public DataManager.DataTypeEnum ParseDataType(string dataType, bool isAutoIncrement)
-			{
+            {
                 // local
                 string fullDataType = dataType;
                 
                 if(isAutoIncrement)
-				{
-					// This Is An AutoNumber field
-					return DataManager.DataTypeEnum.Autonumber;
-				}
-				else
-				{
+	            {
+		            // This Is An AutoNumber field
+		            return DataManager.DataTypeEnum.Autonumber;
+	            }
+	            else
+	            {
                     // if there is an open paren
                     int index = dataType.IndexOf("(");
                     if (index >= 0)
                     {   
-                        // get the dataType before the paren
+                        // get the dataType before the paren (datetime2(0) becomes datetime2)
                         dataType = dataType.Substring(0, index);
                     }
 					
-					// Determine Database Type
-					switch(dataType.ToLower())
-					{
-						case "system.int16":
-						case "system.int32":
+		            // Determine Database Type
+		            switch(dataType.ToLower())
+		            {
+			            case "system.int16":
+			            case "system.int32":
                         case "system.byte":
                         case "int":
                         case "smallint":
+                        case "tinyint":
 						
-							// Integer
-							return DataManager.DataTypeEnum.Integer;
+				            // Integer
+				            return DataManager.DataTypeEnum.Integer;
+
+                        case "system.int64":
+                        case "bigint":
+
+                            // BigInt
+                            return DataManager.DataTypeEnum.BigInt;
 						
-						case "system.datetime":
+			            case "system.datetime":
                         case "datetime":
+                        case "datetime2":
+                        case "smalldatetime":
                         case "date":
                         case "system.date":
 							
-							// DataTime
-							return DataManager.DataTypeEnum.DateTime;
+				            // DataTime
+				            return DataManager.DataTypeEnum.DateTime;
 						
-						case "system.string":
+			            case "system.string":
                         case "varchar":
                         case "nvarchar":
                         case "nchar":
                         case "char":
+                        case "text":
+                        case "ntext":
 
                             // String
                             return DataManager.DataTypeEnum.String;
 						    
-						case "system.guid":
+			            case "system.guid":
                         case "uniqueidentifier":
 						
-							// GUID
-							return DataManager.DataTypeEnum.Guid;
-						
-						case "system.decimal":
+				            // GUID
+				            return DataManager.DataTypeEnum.Guid;
+
+                        case "system.decimal":
                         case "decimal":
                         case "numeric":
-						case "system.single":
-						case "system.double":
-						case "money":
+
+                            // Decimal (exact, apples to apples with the database)
+                            return DataManager.DataTypeEnum.Decimal;
+
+                        case "money":
+                        case "smallmoney":
+
+                            // Currency (same as LoadDataFieldsSchema uses for money)
+                            return DataManager.DataTypeEnum.Currency;
+						
+			            case "system.single":
+			            case "system.double":
                         case "float":
+                        case "real":
 						
-							// Double
-							return DataManager.DataTypeEnum.Double;
+				            // Double
+				            return DataManager.DataTypeEnum.Double;
 						
-						case "system.byte[]":
+			            case "system.byte[]":
+                        case "varbinary":
+                        case "binary":
+                        case "image":
 						
-							// Bytes Are Not Supported Yet
-							return DataManager.DataTypeEnum.Binary;
+				            // Binary (byte[] in the data objects)
+				            return DataManager.DataTypeEnum.Binary;
 						
-						case "system.boolean":
+			            case "system.boolean":
                         case "bit":
 						
-							// Boolean
-							return DataManager.DataTypeEnum.Boolean;
+				            // Boolean
+				            return DataManager.DataTypeEnum.Boolean;
 							
-						default:
+			            default:
 						
-							// Not Supported
-							return DataManager.DataTypeEnum.NotSupported;								
-					}
-				}
-			}
-			#endregion
+				            // Not Supported
+				            return DataManager.DataTypeEnum.NotSupported;								
+		            }
+	            }
+            }
+            #endregion
 
             #region ParseIndexType(object type)
             /// <summary>

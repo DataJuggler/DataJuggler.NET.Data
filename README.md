@@ -7,9 +7,21 @@ soon with this new release.
 
 # Major Rename - DataJuggler.NET.Data
 
-10.8.2026: 
+10.10.2026:
 
-New in this version:
+SQLDatabaseConnector.ParseDataType now supports datetime2, smalldatetime, tinyint, bigint (BigInt), 
+text and ntext (String), real (Double), smallmoney (Currency), and varbinary, binary and image (Binary). 
+decimal and numeric now map to Decimal instead of Double, and money maps to Currency.
+
+SQLDatabaseConnector.LoadDataFieldsSchema now reads DATETIME_PRECISION, and stores it in 
+DataField.Precision for datetime2 columns (the 0 in datetime2(0)). smallmoney columns now load as Currency.
+
+CSharpClassWriter.ConvertDataType now writes decimal properties for Decimal and Currency fields 
+(was double), and long for BigInt fields (was not supported).
+
+SqlHelper: Removed the ExecuteXmlReader and ExecuteXmlReaderTypedParams methods (FOR XML queries).
+
+10.8.2026: 
 
 Database.GetForeignKeysForColumn(DataTable table, string columnName) 
 returns the foreign keys that use a column, both the table's own foreign keys on that column and foreign keys in other tables that reference it.
