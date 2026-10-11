@@ -7,6 +7,9 @@ soon with this new release.
 
 # Major Rename - DataJuggler.NET.Data
 
+10.11.2026: I realized DataManager and CSharpClassWriter were actually newer code in 
+DataJuggler.Net (the .NET Framework version of this project). I restored these 2 classes.
+
 10.10.2026:
 
 SQLDatabaseConnector.ParseDataType now supports datetime2, smalldatetime, tinyint, bigint (BigInt), 
