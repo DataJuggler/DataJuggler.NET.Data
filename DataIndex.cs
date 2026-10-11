@@ -2,11 +2,9 @@
 
 #region using statements
 
+using DataJuggler.NET.Data.Enumerations;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using DataJuggler.NET.Data.Enumerations;
 
 #endregion
 
