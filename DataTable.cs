@@ -44,6 +44,13 @@ namespace DataJuggler.NET.Data
         private bool usesAnsiNulls;
         private bool usesQuotedIdentifier;
         private string viewText;
+
+        // new exclude build options
+        private bool excludeDelete;
+        private bool excludeFetchAll;
+        private bool excludeFind;
+        private bool excludeInsert;
+        private bool excludeUpdate;
 		#endregion
 
  		#region Constructor +1 override
@@ -600,6 +607,61 @@ namespace DataJuggler.NET.Data
             {
                 get { return defaultValueConstraints; }
                 set { defaultValueConstraints = value; }
+            }
+            #endregion
+            
+            #region ExcludeDelete
+            /// <summary>
+            /// This property gets or sets the value for 'ExcludeDelete'.
+            /// </summary>
+            public bool ExcludeDelete
+            {
+                get { return excludeDelete; }
+                set { excludeDelete = value; }
+            }
+            #endregion
+            
+            #region ExcludeFetchAll
+            /// <summary>
+            /// This property gets or sets the value for 'ExcludeFetchAll'.
+            /// </summary>
+            public bool ExcludeFetchAll
+            {
+                get { return excludeFetchAll; }
+                set { excludeFetchAll = value; }
+            }
+            #endregion
+            
+            #region ExcludeFind
+            /// <summary>
+            /// This property gets or sets the value for 'ExcludeFind'.
+            /// </summary>
+            public bool ExcludeFind
+            {
+                get { return excludeFind; }
+                set { excludeFind = value; }
+            }
+            #endregion
+            
+            #region ExcludeInsert
+            /// <summary>
+            /// This property gets or sets the value for 'ExcludeInsert'.
+            /// </summary>
+            public bool ExcludeInsert
+            {
+                get { return excludeInsert; }
+                set { excludeInsert = value; }
+            }
+            #endregion
+            
+            #region ExcludeUpdate
+            /// <summary>
+            /// This property gets or sets the value for 'ExcludeUpdate'.
+            /// </summary>
+            public bool ExcludeUpdate
+            {
+                get { return excludeUpdate; }
+                set { excludeUpdate = value; }
             }
             #endregion
             
