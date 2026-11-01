@@ -7,6 +7,9 @@ soon with this new release.
 
 # Major Rename - DataJuggler.NET.Data
 
+11.1.2026: I had to update System.Security.Cryptography.Pkcs because Microsoft.Data.SqlClient
+references a vulnerable version. 
+
 10.11.2026: I realized DataManager and CSharpClassWriter were actually newer code in 
 DataJuggler.Net (the .NET Framework version of this project). I restored these 2 classes.
 
