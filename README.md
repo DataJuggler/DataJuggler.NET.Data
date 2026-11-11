@@ -7,6 +7,10 @@ soon with this new release.
 
 # Major Rename - DataJuggler.NET.Data
 
+11.11.2026: This project was updated to .NET 11. System.Security.Cryptography.Pkcs to version 11.0.
+Still waiting on Microsoft.Data.SqlClient 7.1.12 that is supposed to drop today, but hasn't. I will update
+this project again when it drops.
+
 11.1.2026: I had to update System.Security.Cryptography.Pkcs because Microsoft.Data.SqlClient
 references a vulnerable version. 
 
