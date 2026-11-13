@@ -1,11 +1,6 @@
-# News
+# News & Updates
 
-9.24.2026: I realized my foreign key constraint and index schema reading was wrong.
-I wasn't taken into account composite keys consisting of more than 1 field. This realse
-now reads all the columns for Indexes and Constraints, and I will be updating DB Compare
-soon with this new release.
-
-# Major Rename - DataJuggler.NET.Data
+11.13.2026: Microsoft.Data.SqlClient was updated.
 
 11.11.2026: This project was updated to .NET 11. System.Security.Cryptography.Pkcs to version 11.0.
 Still waiting on Microsoft.Data.SqlClient 7.1.12 that is supposed to drop today, but hasn't. I will update
@@ -44,10 +39,14 @@ Loading was reset on the original field instead of the clone, and
 DBFieldName, DBDataType, Precision, Scale, DefaultValue, HasDefault, 
 IsAutoIncrement and IsReadOnly are now copied. 
 
-
 9.25.2026: Major update to LoadDatabaseSchema methods. Indexes and Foreign Key Constraints now
 properly handle composite fields (more than one field). Default Value Constraints not capture the
 definition and are not limited to numbers. DB Compare updates are coming today.
+
+9.24.2026: I realized my foreign key constraint and index schema reading was wrong.
+I wasn't taken into account composite keys consisting of more than 1 field. This realse
+now reads all the columns for Indexes and Constraints, and I will be updating DB Compare
+soon with this new release.
 
 3.4.2026: Four Nuget packages were updated.
 
@@ -55,6 +54,8 @@ definition and are not limited to numbers. DB Compare updates are coming today.
 
 12.28.2025: I added a new interface IGridValueProvider. This is used by DataJuggler.Blazor.Components.Grid
 and DataTier.NET. Working to make it easy to display data in a grid.
+
+# Major Rename - DataJuggler.NET.Data
 
 11.21.2025: This project was updated to .NET 10. I renamed this project to DataJuggler.NET.Data so
 a new version doesn't have to be created every year. I had a design flaw in 2019 and went with it for 6 years.
