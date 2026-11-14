@@ -74,7 +74,7 @@ namespace DataJuggler.NET.Data
         /// </param>
         /// <param name="textWriterMode">Set this to true to create a StringBuilder instead of a StreamWriter.</param>
         /// <param name="targetFramework">SEt the TargetFramework</param>        /// 
-		public CSharpClassWriter(ProjectFileManager fileManager, bool businessObjectPassArg, bool textWriterMode = false, TargetFrameworkEnum targetFramework = TargetFrameworkEnum.NetFramework)
+		public CSharpClassWriter(ProjectFileManager fileManager, bool businessObjectPassArg, bool textWriterMode = false, TargetFrameworkEnum targetFramework = TargetFrameworkEnum.NETFramework)
 		{
 		    // set the FileManager 
 		    this.FileManager = fileManager;

@@ -1,5 +1,8 @@
 # News & Updates
 
+11.14.2026: I renamed all the enums to .NET (capitalized) for TargetFrameworkEnum. Sorry for breaking this,
+it has bothered me for years.
+
 11.13.2026: Microsoft.Data.SqlClient was updated.
 
 11.11.2026: This project was updated to .NET 11. System.Security.Cryptography.Pkcs to version 11.0.

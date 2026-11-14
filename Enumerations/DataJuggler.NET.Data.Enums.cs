@@ -3,6 +3,19 @@ using System;
 namespace DataJuggler.NET.Data.Enumerations
 {
 
+    #region enum ChangeTypeEnum : int
+    /// <summary>
+    /// This enum contains choices that describe what type of a change occurred.
+    /// </summary>
+    public enum ChangeTypeEnum : int
+    {
+        ItemRemoved = -1,
+        Unknown = 0,
+        ItemAdded = 1,
+        ItemChanged = 2
+    }
+    #endregion
+
     #region enum FunctionTypeEnum
     /// <summary>
     /// This enumeration is used to designate the type of function
@@ -17,7 +30,7 @@ namespace DataJuggler.NET.Data.Enumerations
     }
     #endregion
 
-    #region Enum IndexTypeEnum
+    #region enum IndexTypeEnum
     /// <summary>
     /// This enumeration is the types of stored procedures
     /// </summary>
@@ -34,7 +47,7 @@ namespace DataJuggler.NET.Data.Enumerations
     }
     #endregion
 
-	#region Enum StoredProcedureTypes
+	#region enum StoredProcedureTypes
 	public enum StoredProcedureTypes : int
 	{
 		NotSet = 0,
@@ -68,13 +81,14 @@ namespace DataJuggler.NET.Data.Enumerations
     /// </summary>
     public enum TargetFrameworkEnum : int
     {  
-        NetFramework = 4,
-        Net5 = 5,
-        Net6 = 6,
-        Net7 = 7,
-        Net8 = 8,
-        Net9 = 9,
-        Net10 = 10
+        NETFramework = 4,
+        NET5 = 5,
+        NET6 = 6,
+        NET7 = 7,
+        NET8 = 8,
+        NET9 = 9,
+        NET10 = 10,
+        NET11 = 11
     }
     #endregion
 
